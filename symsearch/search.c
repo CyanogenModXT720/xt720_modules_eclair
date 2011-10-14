@@ -1,5 +1,5 @@
 /* 
- * search: looks up also for unexproted symbols in the kernel
+ * search: looks up also for unexported symbols in the kernel
  * exports function:
  *
  * Copyright (C) 2010 Skrilax_CZ
@@ -23,7 +23,10 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/fs.h>
+#include <linux/seq_file.h>
 #include <linux/string.h>
+#include "kallsyms.h"
 #include "symsearch.h"
 
 MODULE_AUTHOR("Skrilax_CZ");
@@ -31,31 +34,49 @@ MODULE_DESCRIPTION("Symbol search module");
 MODULE_LICENSE("GPL");
 MODULE_VERSION("1.1");
 
-extern int kallsyms_on_each_symbol(int (*fn)(void *, const char *, struct module *,
-				      unsigned long),
-			    void *data);
-
 SYMSEARCH_INIT_FUNCTION(lookup_symbol_address);
 EXPORT_SYMBOL(lookup_symbol_address);
 
-static int find_kallsyms_lookup_name(void* data, const char* name, 
-                          struct module * module, unsigned long address)
+static void find_kallsyms_lookup_name(void)
 {
-	/* kallsyms_lookup_name is our friend */
-	if (!strcmp(name, "kallsyms_lookup_name"))
+	struct file *kallsyms;
+	struct seq_file *seq;
+	struct kallsym_iter *iter;
+	loff_t pos = 0;
+
+	kallsyms = filp_open("/proc/kallsyms", O_RDONLY, 0);
+	if (!kallsyms)
 	{
-		printk(KERN_INFO "symsearch: found kallsyms_lookup_name on 0x%lx.\n", address);
-		lookup_symbol_address = (lookup_symbol_address_fp)address;
-		return 1;
+		printk(KERN_ERR "symsearch: failed to open /proc/kallsyms\n");
+		return;
 	}
 
-	return 0;
-} 
+	seq = (struct seq_file *)kallsyms->private_data;
+	if (!seq)
+	{
+		printk(KERN_ERR "symsearch: failed to fetch sequential file for /proc/kallsyms\n");
+		goto err_close;
+	}
+
+	for (iter = seq->op->start(seq, &pos);
+		iter != NULL;
+		iter = seq->op->next(seq, iter, &pos))
+	{
+		if (!strcmp(iter->name, "kallsyms_lookup_name"))
+		{
+			printk(KERN_INFO "symsearch: found kallsyms_lookup_name on 0x%lx.\n", iter->value);
+			lookup_symbol_address = (lookup_symbol_address_fp)iter->value;
+			break;
+		}
+	}
+
+err_close:
+	filp_close(kallsyms, NULL);
+}
 
 static int __init symsearch_init(void)
 {
-	/* kallsyms export the kallsyms_on_each_symbol so use that */
-	kallsyms_on_each_symbol(&find_kallsyms_lookup_name, NULL);
+	find_kallsyms_lookup_name();
 	if(!lookup_symbol_address) 
 	{
 		printk(KERN_ERR "symsearch: could not find kallsyms_lookup_name.\n");
