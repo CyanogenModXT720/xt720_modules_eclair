@@ -37,7 +37,7 @@
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/init.h>
-
+#include <linux/version.h>
 #include <linux/proc_fs.h>
 #include <linux/string.h>
 #include <linux/vmalloc.h>
@@ -63,7 +63,12 @@
 #include <mach/hardware.h>
 #include <asm/system.h> 
   
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
 #include <plat/omap-pm.h>
+#else
+#include <mach/omap-pm.h>
+#endif
+
 #include "../symsearch/symsearch.h"
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
@@ -201,9 +206,18 @@ static int proc_mpu_opps_read(char *buffer, char **buffer_location,
 		{
 			if(ret >= count)
 				break;
-				
-			ret += scnprintf(buffer+ret, count-ret, "mpu_opps[%d] rate=%lu opp_id=%u vsel=%u sr_adjust_vsel=%u\n", i, 
-			my_mpu_opps[i].rate, my_mpu_opps[i].opp_id, my_mpu_opps[i].vsel, my_mpu_opps[i].sr_adjust_vsel); 		
+#ifdef SMARTREFLEX
+			ret += scnprintf(buffer+ret, count-ret, "mpu_opps[%d] rate=%lu opp_id=%u vsel=%u sr_adjust_vsel=%u\n",
+				i, my_mpu_opps[i].rate,
+				my_mpu_opps[i].opp_id,
+				my_mpu_opps[i].vsel,
+				my_mpu_opps[i].sr_adjust_vsel);
+#else
+			ret += scnprintf(buffer+ret, count-ret, "mpu_opps[%d] rate=%lu opp_id=%u vsel=%u\n",
+				i, my_mpu_opps[i].rate,
+				my_mpu_opps[i].opp_id,
+				my_mpu_opps[i].vsel);
+#endif
 		}
 
 	return ret;
@@ -233,7 +247,9 @@ static int proc_mpu_opps_write(struct file *filp, const char __user *buffer,
 		//update mpu_opps
 		my_mpu_opps[index].rate = rate;
 		my_mpu_opps[index].vsel = vsel;
+#ifdef SMARTREFLEX
 		my_mpu_opps[index].sr_adjust_vsel = vsel;
+#endif
 		
 		//update frequency table (MAX_VDD1_OPP - index)
 		freq_table[MAX_VDD1_OPP - index].frequency = rate / 1000;
