@@ -29,13 +29,10 @@
 #include <linux/moduleparam.h>
 #include <asm/cputime.h>
 
-#define DRIVER_DEFAULT_NR_RUNNING_ADDR 0xc005e35c
+#include "../symsearch/symsearch.h"
 
-static uint nr_running_addr = DRIVER_DEFAULT_NR_RUNNING_ADDR;
+SYMSEARCH_DECLARE_ADDRESS_STATIC(nr_running);
 static unsigned long (*nr_running_k)(void);
-
-module_param(nr_running_addr, uint, 0444);
-MODULE_PARM_DESC(nr_running_addr, "The nr_running address (default 0xc005e35c)");
 
 static void (*pm_idle_old)(void);
 static atomic_t active_count = ATOMIC_INIT(0);
@@ -290,7 +287,9 @@ static int __init cpufreq_interactive_init(void)
 	unsigned int i;
 	struct timer_list *t;
 	min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
-	nr_running_k = (void *) nr_running_addr;
+
+	SYMSEARCH_BIND_ADDRESS(cpufreq_interactive,nr_running);
+	nr_running_k = (void *) SYMSEARCH_GET_ADDRESS(nr_running);
 
 	/* Initalize per-cpu timers */
 	for_each_possible_cpu(i) {
