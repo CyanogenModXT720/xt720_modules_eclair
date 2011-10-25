@@ -76,7 +76,9 @@ MODULE_DESCRIPTION(DRIVER_DESCRIPTION);
 MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");
 
+#ifdef CPUFREQ_STATS_FREQ_UPDATE
 extern int cpufreq_stats_freq_update(unsigned int cpu, int index, unsigned int freq);
+#endif
 
 static uint freq_table_addr = 0;
 static uint mpu_opps_addr = 0;
@@ -266,7 +268,9 @@ static int proc_mpu_opps_write(struct file *filp, const char __user *buffer,
 			policy->min = policy->cpuinfo.min_freq =
 			policy->user_policy.min = rate / 1000;
 		}
+#ifdef CPUFREQ_STATS_FREQ_UPDATE
 		cpufreq_stats_freq_update(0, MAX_VDD1_OPP - index, rate / 1000);
+#endif
 	} 
 	else
 		printk(KERN_INFO "overclock: insufficient parameters for mpu_opps\n");
