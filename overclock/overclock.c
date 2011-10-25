@@ -161,10 +161,15 @@
 
 #define DRIVER_AUTHOR "Tiago Sousa <mirage@kaotik.org>, nadlabak, Skrilax_CZ"
 #define DRIVER_DESCRIPTION "Motorola Milestone/Droid/DroidX CPU overclocking"
-#define DRIVER_VERSION "1.4.8"
+#define DRIVER_VERSION "1.4.8-xt720"
 
-#define DRIVER_DEFAULT_RATE 720000
-#define DRIVER_DEFAULT_VSEL 62
+#ifdef OMAP36XX
+#define DRIVER_DEFAULT_RATE 1000000
+#define DRIVER_DEFAULT_VSEL 66
+#else
+#define DRIVER_DEFAULT_RATE 550000
+#define DRIVER_DEFAULT_VSEL 56
+#endif
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESCRIPTION);
