@@ -1,6 +1,7 @@
 /*
  * This modules maps additional mtd partions of the Motorola Milestone
  *
+ * Copyright (C) 2010 Mioze7Ae
  * Copyright (C) 2010 Janne Grunau
  * Copyright (C) 2010 Mike Baker
  *
@@ -28,129 +29,115 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 
-#define mtd_hack_part(pname, psize)	.name       = pname,              \
-					.size       = psize * 1024,       \
-					.offset     = MTDPART_OFS_APPEND, \
-					.mask_flags = MTD_WRITEABLE,
-
-#define mtd_hack_partw(pname, psize)     .name       = pname,              \
-					.size       = psize * 1024,       \
-					.offset     = MTDPART_OFS_APPEND, \
-
-
-/* MTD partition layout:
+/*
+ * Motoroi XT720 / Milestone XT720 MTD partition layouts:
  *
- * mtdparts=omap2-nand.0:
- *     128k(mbmloader),
- *     640k(mbm),
- *     640k(mbmbackup),
- *     384k(bploader),
- *     384k(cdt),
- *     1536k(pds),
- *     384k(lbl),
- *     384k(lbl_backup),
- *     384k(cid),
- *     1536k(sp),
- *     384k(devtree),
- *     640k(logo),
- *     384k(misc),
- *     3584k(boot),
- *     3840k(bpsw),
- *     4608k(recovery),
- *     8960k(cdrom),
- *     384k(unused0),
- *     179840k(system),
- *     384k(unused1),
- *     106m(cache),
- *     201856k(userdata),
- *     1536k(cust),
- *     384k(unused2),
- *     2m(kpanic),
- *     512k(rsv)
+ * The 2.1 and 2.2 have different /system, /data & /cache partition
+ * sizes. The MDT partitions are set from the CDT for regular boot, so
+ * they're already visibile and correct in bootstrapped recovery. Most
+ * other partitions are identical across 2.1 and 2.2 sbf's for both
+ * Motoroi XT720 and Milestone XT720. We only add the missing ones.
+ *
+ *     mtdparts=omap2-nand.0:
+ *         128k(mbmloader),
+ *         640k(mbm),
+ *         640k(mbmbackup),
+ *         384k(bploader),
+ *         384k(cdt),
+ *     === 1536k(pds),
+ *         384k(lbl),
+ *         384k(lbl_backup),
+ *     === 384k(cid),
+ *         1536k(sp),
+ *         384k(devtree),
+ *     === 640k(logo),
+ *     === 384k(misc),
+ *     === 3584k(boot),
+ *         3840k(bpsw),
+ *     === 4608k(recovery),
+ *     === 8960k(cdrom),
+ *         384k(unused0),
+ *     === 204416k(system),    | === 173696k(system),         
+ *         384k(unused1),      |     384k(unused1),         
+ *     === 106m(cache),        | === 50m(cache),         
+ *     === 177280k(userdata),  | === 265344k(userdata),    
+ *     === 1536k(cust),
+ *         384k(unused2),
+ *     === 2m(kpanic),
+ *         512k(rsv)
+ *
+ *     === : present in bootstrap recovery via cdt
  *
  */
 
+#define MTD_RO 0
+#define MTD_RW 0
+#define mtd_hack_part(psize, pstart, pname, pflags)     \
+        .name       = pname,                            \
+        .size       = psize * 1024,                     \
+        .offset     = pstart * 1024,                    \
+        .mask_flags = pflags,
 
 struct mtd_partition part[] = {
-	{	mtd_hack_part("h_mbmloader", 128)},
-	{	mtd_hack_part("h_mbm",       640)},
-	{	mtd_hack_partw("h_mbmbackup", 640)},
-        {	mtd_hack_part("h_bploader",  384)},
-        {	mtd_hack_part("h_cdt",       384)},
-        {	mtd_hack_part("h_pds",       1536)},
-        {	mtd_hack_part("h_lbl",       384)},
-        {	mtd_hack_part("h_lblbackup", 384)},
-        {	mtd_hack_part("h_cid",       384)},
-        {	mtd_hack_part("h_sp",        1536)},
-        {	mtd_hack_part("h_devtree",   384)},
-        {	mtd_hack_part("h_logo",      640)},
-        {	mtd_hack_part("h_misc",      384)},
-	{	mtd_hack_part("h_boot",      3584)},
-	{       mtd_hack_part("h_bpsw",      3840)},
-	{       mtd_hack_part("h_recovery",  4608)},
-	{       mtd_hack_part("h_cdrom",     8960)},
-	{       mtd_hack_part("h_unused0",   384)},
-	{       mtd_hack_part("h_system",    179840)},
-	{       mtd_hack_part("h_unused1",   384)},
-	{       mtd_hack_part("h_cache",     106*1024)},
-	{       mtd_hack_part("h_userdata",  201856)},
-	{       mtd_hack_part("h_cust",      1536)},
-	{       mtd_hack_part("h_unused2",   384)},
-	{       mtd_hack_part("h_kpanic",    2048)},
-	{       mtd_hack_part("h_rsv",       512)},
+   { mtd_hack_part(    128,      0, "mbmloader",  MTD_RO ) },
+   { mtd_hack_part(    640,    128, "mbm",        MTD_RO ) },
+   { mtd_hack_part(    640,    768, "mbmbackup",  MTD_RO ) },
+   { mtd_hack_part(    384,   1408, "bploader",   MTD_RO ) },
+   { mtd_hack_part(    384,   1792, "cdt",        MTD_RO ) },
+/* { mtd_hack_part(   1536,   2176, "pds",        MTD_RO ) }, */ /* cdt arg */
+   { mtd_hack_part(    384,   3712, "lbl",        MTD_RO ) },
+   { mtd_hack_part(    384,   4096, "lbl_backup", MTD_RO ) },
+/* { mtd_hack_part(    384,   4480, "cid",        MTD_RO ) }, */ /* cdt arg */
+   { mtd_hack_part(   1536,   4864, "sp",         MTD_RO ) },
+   { mtd_hack_part(    384,   6400, "devtree",    MTD_RO ) },
+/* { mtd_hack_part(    640,   6784, "logo",       MTD_RO ) }, */ /* cdt arg */
+/* { mtd_hack_part(    384,   7424, "misc",       MTD_RO ) }, */ /* cdt arg */
+/* { mtd_hack_part(   3584,   7808, "boot",       MTD_RO ) }, */ /* cdt arg */
+   { mtd_hack_part(   3840,  11392, "bpsw",       MTD_RO ) },
+/* { mtd_hack_part(   4608,  15232, "recovery",   MTD_RO ) }, */ /* cdt arg */
+/* { mtd_hack_part(   8960,  19840, "cdrom",      MTD_RO ) }, */ /* cdt arg */
+   { mtd_hack_part(    384,  28800, "unused0",    MTD_RO ) },
+/* { mtd_hack_part( 204416,  29184, "system",     MTD_RO ) }, */ /* cdt arg */
+/* { mtd_hack_part(    384, 233600, "unused1",    MTD_RO ) }, */ /* varies */
+/* { mtd_hack_part( 108544, 233984, "cache",      MTD_RO ) }, */ /* cdt arg */
+/* { mtd_hack_part( 177280, 342528, "userdata",   MTD_RO ) }, */ /* cdt arg */
+/* { mtd_hack_part(   1536, 519808, "cust",       MTD_RO ) }, */ /* cdt arg */
+   { mtd_hack_part(    384, 521344, "unused2",    MTD_RO ) },
+/* { mtd_hack_part(   2048, 521728, "kpanic",     MTD_RO ) }, */ /* cdt arg */
+   { mtd_hack_part(    512, 523776, "rsv",        MTD_RO ) },
 };
 
 static int create_missing_flash_parts(struct device *dev, void *data)
 {
+    struct mtd_info *mtd = NULL;
+    
+    printk(KERN_INFO "mtd-hack: device %s\n", dev->init_name);
 
-	struct mtd_info *mtd = NULL;
+    mtd = dev_get_drvdata(dev);
+    if (!mtd)
+	return -1;
 
-	printk(KERN_INFO "mtd-hack: device %s\n", dev->init_name);
+    printk(KERN_INFO "mtd-hack: mtd name %s, type %d, size %llu\n",
+	   mtd->name, mtd->type, mtd->size);
+    add_mtd_partitions(mtd, part, sizeof(part)/sizeof(part[0]));	
+    printk(KERN_INFO "mtd-hack: mtd name %s, type %d, size %llu\n",
+	   mtd->name, mtd->type, mtd->size);
 
-	mtd = dev_get_drvdata(dev);
-
-	if (!mtd)
-		return -1;
-
-        printk(KERN_INFO "mtd-hack: mtd name %s, type %d, size %llu\n",
-                mtd->name, mtd->type, mtd->size);
-
-        /*
-        if (mtd->read) {
-                size_t ret = 0;
-                u_char buf[520];
-                int i;
-//  int (*read) (struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf);
-                mtd->read(mtd, 7995392, 512, &ret, buf);
-
-                printk(KERN_INFO "flash contents: ");
-                for (i=0; i < ret; i++)
-                        printk(KERN_INFO "0x%x ", buf[i]);
-        }
-        */
-
-	add_mtd_partitions(mtd, part, 26);	
-
-	return 0;
+    return 0;
 }
 
 static int __init mtd_init(void)
 {
-	struct device_driver *devdrv;
-	int err = 0;
+    struct device_driver *devdrv;
+    int err = 0;
 
-	//	struct device_driver *driver_find(const char *name, struct bus_type *bus);
-	devdrv = driver_find("omap2-nand", &platform_bus_type);
+    devdrv = driver_find("omap2-nand", &platform_bus_type);
+    printk(KERN_INFO "mtd-hack: found driver %s modname %s\n", devdrv->name, devdrv->mod_name);
 
-	printk(KERN_INFO "mtd-hack: found driver %s modname %s\n", devdrv->name, devdrv->mod_name);
-	//	int driver_for_each_device(struct device_driver *drv, struct device *start,
-	//	                           void *data, int (*fn)(struct device *, void *))
-	err = driver_for_each_device(devdrv, NULL, NULL, create_missing_flash_parts);
+    err = driver_for_each_device(devdrv, NULL, NULL, create_missing_flash_parts);
+    printk(KERN_INFO "mtd hack loaded");
 
-
-	printk(KERN_INFO "mtd hack loaded");
-
-	return 0;
+    return 0;
 }
  
 module_init(mtd_init);
