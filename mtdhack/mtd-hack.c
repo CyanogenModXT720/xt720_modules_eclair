@@ -1,7 +1,7 @@
 /*
  * This modules maps additional mtd partions of the Motorola Milestone
  *
- * Copyright (C) 2010 Mioze7Ae
+ * Copyright (C) 2012 Mioze7Ae
  * Copyright (C) 2010 Janne Grunau
  * Copyright (C) 2010 Mike Baker
  *
