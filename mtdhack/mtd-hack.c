@@ -70,7 +70,8 @@
  *
  */
 
-#define MTD_RO 0
+/* Note: Inverted sense because these are masks -- bits to be _removed_ */
+#define MTD_RO (MTD_WRITEABLE)
 #define MTD_RW 0
 #define mtd_hack_part(psize, pstart, pname, pflags)     \
         .name       = pname,                            \
