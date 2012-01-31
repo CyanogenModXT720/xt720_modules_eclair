@@ -106,6 +106,7 @@ struct mtd_partition part[] = {
    { mtd_hack_part(    384, 521344, "unused2",    MTD_RO ) },
 /* { mtd_hack_part(   2048, 521728, "kpanic",     MTD_RO ) }, */ /* cdt arg */
    { mtd_hack_part(    512, 523776, "rsv",        MTD_RO ) },
+   { mtd_hack_part( 524288,      0, "totality",   MTD_RO ) },
 };
 
 static int create_missing_flash_parts(struct device *dev, void *data)
