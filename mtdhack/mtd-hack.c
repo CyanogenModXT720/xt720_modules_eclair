@@ -1,5 +1,5 @@
 /*
- * This modules maps additional mtd partions of the Motorola Milestone
+ * This modules maps additional mtd partions of the Motorola Milestone XT720
  *
  * Copyright (C) 2012 Mioze7Ae
  * Copyright (C) 2010 Janne Grunau
@@ -117,13 +117,13 @@ static int create_missing_flash_parts(struct device *dev, void *data)
 
     mtd = dev_get_drvdata(dev);
     if (!mtd)
-	return -1;
+        return -1;
 
     printk(KERN_INFO "mtd-hack: mtd name %s, type %d, size %llu\n",
-	   mtd->name, mtd->type, mtd->size);
+           mtd->name, mtd->type, mtd->size);
     add_mtd_partitions(mtd, part, sizeof(part)/sizeof(part[0]));	
     printk(KERN_INFO "mtd-hack: mtd name %s, type %d, size %llu\n",
-	   mtd->name, mtd->type, mtd->size);
+           mtd->name, mtd->type, mtd->size);
 
     return 0;
 }
