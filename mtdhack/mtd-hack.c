@@ -109,6 +109,21 @@ struct mtd_partition part[] = {
    { mtd_hack_part( 524288,      0, "totality",   MTD_RO ) },
 };
 
+static int mark_boot_writeable(void)
+{
+    struct mtd_info *mtd = NULL;
+
+    mtd = get_mtd_device_nm("boot");
+    if (IS_ERR(mtd))
+        return -1;
+
+    printk(KERN_INFO "mtd-hack: original 'boot' partition flags: %d\n", mtd->flags);
+    mtd->flags = (mtd->flags | MTD_WRITEABLE);
+    printk(KERN_INFO "mtd-hack: modified 'boot' partition flags: %d\n", mtd->flags);
+
+    return 0;
+}
+
 static int create_missing_flash_parts(struct device *dev, void *data)
 {
     struct mtd_info *mtd = NULL;
@@ -132,6 +147,8 @@ static int __init mtd_init(void)
 {
     struct device_driver *devdrv;
     int err = 0;
+
+    mark_boot_writeable();
 
     devdrv = driver_find("omap2-nand", &platform_bus_type);
     printk(KERN_INFO "mtd-hack: found driver %s modname %s\n", devdrv->name, devdrv->mod_name);
