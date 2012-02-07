@@ -70,9 +70,12 @@ MODULE_VERSION("1.0");
  *                              };
  *            };
  *
- * Processing of the sensor rotation is initialized inappropriately on
- * Milestone XT720 hardware. This module enters the initialized kxtf9
- * driver and substitutes the correct values.
+ * Consequently, on a Milestone XT720 running Motoroi's device-tree
+ * (which seems to be required for vulnerable recovery), processing of
+ * the sensor rotation is initialized inappropriately and the display
+ * is always rotated 90 degrees unless autorotation is disabled.  This
+ * module enters the initialized kxtf9 driver and substitutes the
+ * correct values to fix that problem.
  *
  */
 
@@ -96,7 +99,7 @@ static int __init kxtf9_fix_init(void)
 		goto err_close;
 	}
 
-	printk(KERN_INFO "kxtf9-fix: negate_x/y/z = %d/%d/%d, axis_map_x = %d/%d/%d\n",
+	printk(KERN_INFO "kxtf9-fix: negate_x/y/z = %d/%d/%d, axis_map_x/y/z = %d/%d/%d\n",
 	       tf9->pdata->negate_x, tf9->pdata->negate_y, tf9->pdata->negate_z, 
 	       tf9->pdata->axis_map_x, tf9->pdata->axis_map_y, tf9->pdata->axis_map_z);
 
