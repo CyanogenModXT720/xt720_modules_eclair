@@ -43,7 +43,7 @@
 #define OMAP_HSMMC_WRITE(base, reg, val) \
 	__raw_writel((val), (base) + OMAP_HSMMC_##reg)
 
-struct omap_hsmmc_host {
+struct mmc_omap_host {
 	struct	device		*dev;
 	struct	mmc_host	*mmc;
 	struct	mmc_request	*mrq;
@@ -56,35 +56,32 @@ struct omap_hsmmc_host {
 	struct	work_struct	mmc_carddetect_work;
 	void	__iomem		*base;
 	resource_size_t		mapbase;
-	spinlock_t		irq_lock; /* Prevent races with irq handler */
+	spinlock_t		irq_lock;	/* Prevent races with irq handler */
 	unsigned long		flags;
 	unsigned int		id;
 	unsigned int		dma_len;
-	unsigned int		dma_sg_idx;
+	unsigned int		dma_dir;
 	unsigned char		bus_mode;
-	unsigned char		power_mode;
+	unsigned char		datadir;
 	u32			*buffer;
 	u32			bytesleft;
 	int			suspended;
 	int			irq;
+	int			carddetect;
 	int			use_dma, dma_ch;
-	int			dma_line_tx, dma_line_rx;
+	int			initstr;
 	int			slot_id;
-	int			got_dbclk;
-	int			response_busy;
-	int			context_loss;
-	int			dpm_state;
-	int			vdd;
-	int			protect_card;
-	int			reqs_blocked;
-
+	int			dbclk_enabled;
+	int 			clks_enabled;
+	/* Clocks lock to prevent race condition */
+	spinlock_t		clk_lock;
+	struct timer_list	inact_timer;
 	struct	omap_mmc_platform_data	*pdata;
 };
 
 // hooked function
-static void set_data_timeout(struct omap_hsmmc_host *host,
-			     unsigned int timeout_ns,
-			     unsigned int timeout_clks)
+static void set_data_timeout(struct mmc_omap_host *host,
+			     struct mmc_request *req)
 {
 	uint32_t reg;
 
@@ -94,9 +91,8 @@ static void set_data_timeout(struct omap_hsmmc_host *host,
 	reg &= ~DTO_MASK;
 	reg |= DTO << DTO_SHIFT;
 	OMAP_HSMMC_WRITE(host->base, SYSCTL, reg);
-	if (0) HOOK_INVOKE(set_data_timeout, host, timeout_ns, timeout_clks);
+	if (0) HOOK_INVOKE(set_data_timeout, host, req);
 }
-
 
 struct hook_info g_hi[] = {
 	HOOK_INIT(set_data_timeout),
