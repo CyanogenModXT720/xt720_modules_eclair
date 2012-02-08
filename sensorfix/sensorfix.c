@@ -1,5 +1,5 @@
 /* 
- * kxtf9_fix: ensure correct initialization of kxtf9 orientation
+ * sensorfix: ensure correct initialization of kxtf9 orientation
  *            sensor processing on Milestone XT720
  *
  * Copyright (C) 2012 Mioze7Ae
@@ -35,7 +35,7 @@ struct kxtf9_data {
 };
 
 MODULE_AUTHOR("Mioze7Ae");
-MODULE_DESCRIPTION("kxtf9 fix module");
+MODULE_DESCRIPTION("Milestone XT720 sensorfix module");
 MODULE_LICENSE("GPL");
 MODULE_VERSION("1.0");
 
@@ -79,7 +79,7 @@ MODULE_VERSION("1.0");
  *
  */
 
-static int __init kxtf9_fix_init(void)
+static int __init sensorfix_init(void)
 {
 	struct file *kxtf9;
 	struct kxtf9_data *tf9;
@@ -88,20 +88,16 @@ static int __init kxtf9_fix_init(void)
 	kxtf9 = filp_open("/dev/kxtf9", O_RDONLY, 0);
 	if (!kxtf9)
 	{
-		printk(KERN_ERR "kxtf9-fix: failed to open /dev/kxtf9\n");
+		printk(KERN_ERR "sensorfix: failed to open /dev/kxtf9\n");
 		return exit_code;
 	}
 
 	tf9 = (struct kxtf9_data *)kxtf9->private_data;
 	if (!tf9)
 	{
-		printk(KERN_ERR "kxtf9-fix: failed to fetch kxtf9_platform_data\n");
+		printk(KERN_ERR "sensorfix: failed to fetch kxtf9_platform_data\n");
 		goto err_close;
 	}
-
-	printk(KERN_INFO "kxtf9-fix: negate_x/y/z = %d/%d/%d, axis_map_x/y/z = %d/%d/%d\n",
-	       tf9->pdata->negate_x, tf9->pdata->negate_y, tf9->pdata->negate_z, 
-	       tf9->pdata->axis_map_x, tf9->pdata->axis_map_y, tf9->pdata->axis_map_z);
 
 	tf9->pdata->axis_map_x = 0;
 	tf9->pdata->axis_map_y = 1;
@@ -111,7 +107,7 @@ static int __init kxtf9_fix_init(void)
 	tf9->pdata->negate_y = 1;
 	tf9->pdata->negate_z = 1;
 
-	printk(KERN_INFO "kxtf9-fix: negate_x/y/z = %d/%d/%d, axis_map_x = %d/%d/%d\n",
+	printk(KERN_INFO "sensorfix: kxtf9 negate_x/y/z = %d/%d/%d, axis_map_x = %d/%d/%d\n",
 	       tf9->pdata->negate_x, tf9->pdata->negate_y, tf9->pdata->negate_z, 
 	       tf9->pdata->axis_map_x, tf9->pdata->axis_map_y, tf9->pdata->axis_map_z);
 
@@ -122,4 +118,4 @@ err_close:
 	return exit_code;
 }
 
-module_init(kxtf9_fix_init);
+module_init(sensorfix_init);
